@@ -1,0 +1,22 @@
+version: "3"
+
+services:
+  postgres:
+    image: postgres:12.2
+    ports: ["5432:5432"]
+    environment:
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_USER=crazy-highway
+  zookeeper:
+    image: zookeeper:3.4
+    ports: ["2181:2181"]
+  kafka:
+    image: wurstmeister/kafka:2.13-2.7.0
+    ports: ["9092:9092"]
+    depends_on:
+      - zookeeper
+    environment:
+      - KAFKA_ADVERTISED_HOST_NAME=kafka # Make sure you kafka is mapped to localhost host in your /etc/hosts
+      - KAFKA_AUTO_CREATE_TOPICS_ENABLE=true
+      - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
+#      - KAFKA_CREATE_TOPICS=speed-observations:1:3
