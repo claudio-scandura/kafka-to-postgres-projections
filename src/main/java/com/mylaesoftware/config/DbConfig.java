@@ -26,4 +26,6 @@ public interface DbConfig {
     @ConfigValue(atPath = "password")
     String dbPassword();
 
+    @ConfigValue(atPath = "max-pool-size")
+    Integer dbMaxPoolSize();
 }

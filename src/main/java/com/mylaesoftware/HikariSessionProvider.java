@@ -28,7 +28,7 @@ public class HikariSessionProvider {
         hikariConfig.addDataSourceProperty("user", config.dbUsername());
         hikariConfig.addDataSourceProperty("password", config.dbPassword());
         hikariConfig.setAutoCommit(false);
-        hikariConfig.setMaximumPoolSize(8);
+        hikariConfig.setMaximumPoolSize(config.dbMaxPoolSize());
 
         dataSource = new HikariDataSource(hikariConfig);
     }

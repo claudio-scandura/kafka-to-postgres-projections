@@ -253,5 +253,10 @@ public class SpeedStatsProjectionTest {
         public String dbPassword() {
             return dbPassword;
         }
+
+        @Override
+        public Integer dbMaxPoolSize() {
+            return 1;
+        }
     }
 }
