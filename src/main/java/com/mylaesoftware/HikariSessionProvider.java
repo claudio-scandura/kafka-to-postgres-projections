@@ -12,11 +12,11 @@ import org.flywaydb.core.Flyway;
 import java.sql.Connection;
 import java.sql.SQLException;
 
-public class PostgreSqlSessionProvider {
+public class HikariSessionProvider {
 
     private final HikariDataSource dataSource;
 
-    public PostgreSqlSessionProvider(DbConfig config) {
+    public HikariSessionProvider(DbConfig config) {
 
         initSchema(config);
 

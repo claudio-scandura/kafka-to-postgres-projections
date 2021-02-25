@@ -138,7 +138,7 @@ public class SpeedStatsProjectionTest {
         assertThat(FutureConverters.toJava(projection.stop())).succeedsWithin(timeout).isEqualTo(Done.done());
     }
 
-    private PostgreSqlSessionProvider createSessionProvider() {
+    private HikariSessionProvider createSessionProvider() {
         var appConfig = TestConfig.builder()
                 .dbName(postgres.getDatabaseName())
                 .dbUsername(postgres.getUsername())
@@ -146,7 +146,7 @@ public class SpeedStatsProjectionTest {
                 .dbServerName(postgres.getHost())
                 .dbPort(postgres.getMappedPort(PostgreSQLContainer.POSTGRESQL_PORT))
                 .build();
-        return new PostgreSqlSessionProvider(appConfig);
+        return new HikariSessionProvider(appConfig);
     }
 
     @SneakyThrows

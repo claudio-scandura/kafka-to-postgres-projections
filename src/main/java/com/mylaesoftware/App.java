@@ -18,7 +18,7 @@ public class App {
 
         ApplicationConfig config = ConfigComposer.wire(system.settings().config());
 
-        var sessionProvider = new PostgreSqlSessionProvider(config);
+        var sessionProvider = new HikariSessionProvider(config);
 
         var consumerSettings =
                 ConsumerSettings.create(system, new StringDeserializer(), new SpeedObservationDeserializer())

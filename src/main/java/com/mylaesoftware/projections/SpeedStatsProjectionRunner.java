@@ -8,7 +8,7 @@ import akka.projection.javadsl.SourceProvider;
 import akka.projection.jdbc.javadsl.JdbcHandler;
 import akka.projection.jdbc.javadsl.JdbcProjection;
 import com.mylaesoftware.domain.SpeedObservation;
-import com.mylaesoftware.PostgreSqlSessionProvider;
+import com.mylaesoftware.HikariSessionProvider;
 import lombok.AllArgsConstructor;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 
@@ -16,7 +16,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 public class SpeedStatsProjectionRunner {
 
     private final SourceProvider<MergeableOffset<Long>, ConsumerRecord<String, SpeedObservation>> sourceProvider;
-    private final PostgreSqlSessionProvider sessionProvider;
+    private final HikariSessionProvider sessionProvider;
 
     public RunningProjection runStatsByRadar(ActorSystem<?> system) {
         return JdbcProjection.exactlyOnce(
