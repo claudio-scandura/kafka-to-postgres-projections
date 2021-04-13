@@ -16,12 +16,14 @@ repositories {
     mavenCentral()
 }
 
+val akkaVersion = "2.6.10"
+
 dependencies {
     implementation("com.typesafe:config:1.4.1")
     implementation("com.mylaesoftware:config-composer:0.0.4")
     annotationProcessor("com.mylaesoftware:config-composer-processor:0.0.4")
-    implementation("com.typesafe.akka:akka-actor-typed_2.13:2.6.10")
-    implementation("com.typesafe.akka:akka-stream_2.13:2.6.10")
+    implementation("com.typesafe.akka:akka-actor-typed_2.13:$akkaVersion")
+    implementation("com.typesafe.akka:akka-stream_2.13:$akkaVersion")
     implementation("com.typesafe.akka:akka-stream-kafka_2.13:2.0.7")
     implementation("com.lightbend.akka:akka-projection-core_2.13:1.1.0")
     implementation("com.lightbend.akka:akka-projection-kafka_2.13:1.1.0")
@@ -29,9 +31,13 @@ dependencies {
     implementation("org.postgresql:postgresql:42.2.19")
     implementation("org.flywaydb:flyway-core:7.5.3")
     implementation("ch.qos.logback:logback-classic:1.2.3")
-    implementation("com.typesafe.akka:akka-slf4j_2.13:2.6.10")
+    implementation("com.typesafe.akka:akka-slf4j_2.13:$akkaVersion")
     implementation("com.zaxxer:HikariCP:4.0.2")
 
+    testImplementation("org.mockito:mockito-core:3.9.0")
+    testImplementation("org.mockito:mockito-junit-jupiter:3.9.0")
+    testImplementation("com.typesafe.akka:akka-actor-testkit-typed_2.13:$akkaVersion")
+    testImplementation("com.typesafe.akka:akka-stream-testkit_2.13:$akkaVersion")
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.7.1")
     testImplementation("org.junit.jupiter:junit-jupiter-engine:5.7.1")
     testImplementation("org.assertj:assertj-core:3.19.0")
