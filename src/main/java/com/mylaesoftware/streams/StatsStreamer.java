@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.CompletionStage;
 
 @Slf4j
 public class StatsStreamer extends AbstractBehavior<StatsStreamer.StatsStreaming> {
@@ -54,7 +55,6 @@ public class StatsStreamer extends AbstractBehavior<StatsStreamer.StatsStreaming
                 .onMessageEquals(PollRepo.INSTANCE, this::pollRepo)
                 .onMessage(UpdateStats.class, this::updateStats)
                 .onMessage(Subscribe.class, this::subscribe)
-                .onMessage(AddSubscriber.class, this::addSubscriber)
                 .onMessage(RemoveSubscriber.class, this::removeSubscriber)
                 .onSignalEquals(PostStop.instance(), this::completeAllSubscribers)
                 .build();
@@ -66,11 +66,6 @@ public class StatsStreamer extends AbstractBehavior<StatsStreamer.StatsStreaming
         return this;
     }
 
-    private Behavior<StatsStreaming> addSubscriber(AddSubscriber addSubscriber) {
-        addSubscriber.subscriberQueue.offer(new FastestNCars(stats));
-        subscribers.put(addSubscriber.subscriberId, addSubscriber.subscriberQueue);
-        return this;
-    }
 
     private Behavior<StatsStreaming> removeSubscriber(RemoveSubscriber removeSubscriber) {
         subscribers.remove(removeSubscriber.subscriberId);
@@ -80,24 +75,42 @@ public class StatsStreamer extends AbstractBehavior<StatsStreamer.StatsStreaming
 
     private Behavior<StatsStreaming> subscribe(Subscribe subscribe) {
         long subscriberId = ++nextSubscriberId;
-        var events = Source.<FastestNCars>queue(100, OverflowStrategy.backpressure())
-                .mapMaterializedValue(queue -> {
-                    getContext().getSelf().tell(new AddSubscriber(subscriberId, queue));
-                    return NotUsed.notUsed();
-                }).watchTermination((nu, completion) -> {
-                    getContext().pipeToSelf(completion, handleSubscriberTermination(subscriberId));
-                    return nu;
-                });
-        subscribe.replyTo.tell(new SubscriberAdded(events));
+
+        var queueAndSource = Source.<FastestNCars>queue(100, OverflowStrategy.backpressure())
+                .preMaterialize(getContext().getSystem());
+
+        // add subscriber and offer current state
+        subscribers.put(subscriberId, queueAndSource.first());
+        publishUpdate(subscriberId, queueAndSource.first(), new FastestNCars(stats));
+
+        var eventSource = queueAndSource.second().watchTermination((nu, completion) -> {
+            getContext().pipeToSelf(completion, handleSubscriberTermination(subscriberId));
+            return nu;
+        });
+
+        subscribe.replyTo.tell(new SubscriberAdded(eventSource));
         return this;
+    }
+
+    private CompletionStage<Done> publishUpdate(long subscriberId,
+                                                            SourceQueueWithComplete<FastestNCars> queue, FastestNCars update) {
+        return queue.offer(update).handle((res, throwable) -> {
+            if (!Objects.isNull(throwable)) {
+                log.error("Failed to offer update '{}' to subscriber {}", update, subscriberId, throwable);
+            } else {
+                log.info("Update '{}' offered to subscriber {}", update, subscriberId);
+            }
+            return Done.done();
+        });
     }
 
     private Function2<Done, Throwable, StatsStreaming> handleSubscriberTermination(long subscriberId) {
         return (done, throwable) -> {
             if (!Objects.isNull(throwable)) {
                 log.warn("Subscriber {} terminated with error", subscriberId, throwable);
+            } else {
+                log.info("Subscriber {} terminated gracefully", subscriberId);
             }
-            log.info("Subscriber {} terminated gracefully", subscriberId);
             return new RemoveSubscriber(subscriberId);
         };
     }
@@ -106,7 +119,7 @@ public class StatsStreamer extends AbstractBehavior<StatsStreamer.StatsStreaming
         if (!a.stats.equals(stats)) {
             stats = a.stats;
             var update = new FastestNCars(a.stats);
-            subscribers.values().forEach(s -> s.offer(update));
+            subscribers.forEach((subscriberId, queue) -> publishUpdate(subscriberId, queue, update));
         }
         return this;
     }
@@ -126,12 +139,6 @@ public class StatsStreamer extends AbstractBehavior<StatsStreamer.StatsStreaming
     @AllArgsConstructor
     private static class UpdateStats implements StatsStreaming {
         final List<Pair<String, Integer>> stats;
-    }
-
-    @AllArgsConstructor
-    private static class AddSubscriber implements StatsStreaming {
-        final Long subscriberId;
-        final SourceQueueWithComplete<FastestNCars> subscriberQueue;
     }
 
     @AllArgsConstructor
